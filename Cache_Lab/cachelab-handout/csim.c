@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-// 定义缓存行结构
+// Cache line structure
 typedef struct
 {
     uint8_t valid;
@@ -13,21 +13,21 @@ typedef struct
     uint32_t LRU_counter;
 } cache_line;
 
-// 函数声明
+// Function declarations
 void manipulate(char identifier, uint64_t address, uint32_t size);
 void insert(uint32_t set_index, uint64_t tag);
 void evict(uint32_t set_index, uint64_t tag);
 void update(uint32_t set_index);
 void load_trace();
 
-// 全局变量声明
+// Global variable declarations
 cache_line** cache;
 uint32_t S, s, E, b, verbose;
 uint32_t hits, misses, evictions;
 char* trace_file;
-uint8_t M_unique;     // 保证 M 指令只输出一次
+uint8_t M_unique;     // Ensures M instruction output is printed only once
 
-// 操作是否命中
+// Check if the operation hits the cache
 void manipulate(char identifier, uint64_t address, uint32_t size)
 { 
     uint32_t set_index = (address >> b) & ((0x1 << s) - 1);
@@ -39,11 +39,11 @@ void manipulate(char identifier, uint64_t address, uint32_t size)
         M_unique = 0;
     }
 
-    // 如果组为空，则未命中，模拟缓存将块导入到缓存中
+    // If the set is empty, cache miss — simulate loading the block into cache
     if (cache[set_index] == NULL)
     {
         cache[set_index] = (cache_line*)malloc(sizeof(cache_line) * E);
-        // 初始化，防止段错误
+        // Initialize to prevent segfault
         for (int i = 0; i < E; i++) 
         {
             cache[set_index][i].valid = 0;
@@ -52,7 +52,7 @@ void manipulate(char identifier, uint64_t address, uint32_t size)
         }
         insert(set_index, tag);
     }
-    // 如果组不为空，验证有效位和标记位
+    // If the set is not empty, check valid bit and tag
     else
     {
         for (int i = 0; i < E; i++)
@@ -69,12 +69,12 @@ void manipulate(char identifier, uint64_t address, uint32_t size)
                 return;
             }
         }
-        // 有效位为0，或标记位不匹配
+        // Valid bit is 0, or tag mismatch — cache miss
         insert(set_index, tag);
     }
 }
 
-// 模拟块导入缓存
+// Simulate loading a block into cache
 void insert(uint32_t set_index, uint64_t tag)
 {
     misses++;
@@ -95,11 +95,11 @@ void insert(uint32_t set_index, uint64_t tag)
             return;
         }
     }
-    // 当前缓存组已满，驱逐最久之前用的行，导入新的行
+    // Cache set is full, evict the LRU line and load the new one
     evict(set_index, tag);
 }
 
-// 模拟缓存组已满，采用LRU驱逐旧行，导入新行
+// Simulate a full cache set: evict the LRU line and load the new line
 void evict(uint32_t set_index, uint64_t tag)
 {
     uint32_t replace_index = 0;
@@ -127,11 +127,12 @@ void evict(uint32_t set_index, uint64_t tag)
     update(set_index);
 }
 
-/*  
-    相对更新大小，由于每次都是在组内操作，只需比较组内的LRU_counter大小即可
-    针对不同的操作，根据其组索引，只更新其组内的有效行的LRU_counter
-    无需全局更新LRU_counter，时间复杂度由O(S * E)降为O(E)
-*/ 
+/*
+    Relative LRU update: since all operations are within a single set, only compare
+    LRU_counter values within that set. Update only the valid lines in the set indexed
+    by the current operation — no global update needed. Reduces time complexity from
+    O(S * E) to O(E).
+*/
 void update(uint32_t set_index)
 {
     cache_line* set = cache[set_index];
@@ -144,7 +145,7 @@ void update(uint32_t set_index)
     }
 }
 
-// 导入trace文件，行读取，并对每种操作执行manipulate函数
+// Load trace file, read line by line, and call manipulate for each operation
 void load_trace()
 {
     FILE* pFile = fopen(trace_file, "r");
@@ -162,7 +163,7 @@ void load_trace()
         case 'I':
             break;
         case 'M':
-            // M 操作是先读取再保存，操作两次
+            // M operation is a read followed by a write — process twice
             manipulate(identifier, address, size);
             manipulate(identifier, address, size);
             break;
@@ -176,7 +177,7 @@ void load_trace()
     fclose(pFile);
 }
 
-// 主函数，包括从命令行读取参数的getopt函数
+// Main function — uses getopt to parse command-line arguments
 int main(int argc, char** argv)
 {
     int opt;
@@ -219,12 +220,12 @@ int main(int argc, char** argv)
     }
 
     cache = (cache_line**)malloc(sizeof(cache_line*) * S);
-    // 初始化，防止段错误
+    // Initialize to prevent segfault
     for (int i = 0; i < S; i++) cache[i] = NULL;
 
     load_trace();
 
-    // 释放内存，首先释放cache中存储的指针指向的内存，在释放cache二级指针指向的内容
+    // Free memory: first free each set's array, then free the outer pointer array
     for (int i = 0; i < S; i++) free(cache[i]);
     free(cache);
 

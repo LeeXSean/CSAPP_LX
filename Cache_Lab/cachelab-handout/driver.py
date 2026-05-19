@@ -38,7 +38,7 @@ def main():
     p = subprocess.Popen("./test-csim", 
                          shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout_data, _ = p.communicate()
-    stdout_data = stdout_data.decode('utf-8') # Python 3 需要解码字节流
+    stdout_data = stdout_data.decode('utf-8') # Python 3: decode bytes to string
 
     resultsim = []
     lines = stdout_data.split('\n')
@@ -72,7 +72,7 @@ def main():
     out, _ = p.communicate()
     result61 = re.findall(r'(\d+)', out.decode('utf-8'))
     
-    # 计算分数
+    # Compute scores
     try:
         csim_cscore = int(resultsim[0]) if resultsim else 0
         miss32 = int(result32[1]) if len(result32) > 1 else 2**31-1
@@ -91,7 +91,7 @@ def main():
         print(f"Error parsing results: {e}")
         total_score = 0
 
-    # 打印总结
+    # Print summary
     print("\nCache Lab summary:")
     print("%-22s%8s%10s%12s" % ("", "Points", "Max pts", "Misses"))
     print("%-22s%8.1f%10d" % ("Csim correctness", csim_cscore, maxscore['csim']))

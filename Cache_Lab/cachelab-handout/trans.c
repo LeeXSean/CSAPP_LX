@@ -137,7 +137,7 @@ void transpose_32(int M, int N, int A[N][M], int B[M][N])
 }
 
 /*
- * 8*8分块矩阵示意图（每个编号块是4*4）
+ * 8x8 block diagram (each numbered sub-block is 4x4)
  *  __________________________________
  * |                |                 |
  * |        1       |        2        |
@@ -154,9 +154,9 @@ void transpose_64(int M, int N, int A[N][M], int B[M][N])
     {
         for (j = 0; j < M; j += 8)
         {
-            /* 
-                读取A矩阵的1号块、2号块，对A矩阵的1号块、2号块转置，填入B矩阵的1号块、2号块
-                此时2号块为暂时储存区域，存放本应该放在3号块的数据
+            /*
+                Read blocks 1 and 2 of A, transpose them, and write into blocks 1 and 2 of B.
+                Block 2 of B temporarily holds data that should eventually go into block 3.
             */
             for (k = i; k < i + 4; k++)
             {
@@ -170,9 +170,9 @@ void transpose_64(int M, int N, int A[N][M], int B[M][N])
                 
             }
             /*
-                1.读取A矩阵的3号块，对A矩阵的3号块转置，填入B矩阵的2号块
-                2.将2号块暂时储存的数据转移到3号块
-                    两个操作交叉进行
+                1. Read block 3 of A, transpose it, and write into block 2 of B.
+                2. Move the temporarily stored data from block 2 into block 3.
+                   These two operations are interleaved.
             */
             for (k = j; k < j + 4; k++)
             {
@@ -183,7 +183,7 @@ void transpose_64(int M, int N, int A[N][M], int B[M][N])
                 B[k+4][i] = v5;    B[k+4][i+1] = v6;   B[k+4][i+2] = v7;   B[k+4][i+3] = v8;
             }
             /*
-                读取A矩阵的4号块，对A矩阵的4号块转置，填入B矩阵的4号块
+                Read block 4 of A, transpose it, and write into block 4 of B.
             */
             for (k = i + 4; k < i + 8; k++)
             {
